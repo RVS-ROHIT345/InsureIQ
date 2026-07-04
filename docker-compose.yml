@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  insureiq-api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # Never commit .env — see .gitignore
+    environment:
+      - APP_ENV=production
+    # Restart on crash — important for Cloud Run equivalent behavior
+    restart: unless-stopped
+    # Health check — Cloud Run uses this
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP file server (separate process)
+  insureiq-mcp:
+    build: .
+    command: ["python", "mcp_server/file_server.py"]
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    restart: unless-stopped

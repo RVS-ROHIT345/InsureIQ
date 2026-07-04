@@ -1,0 +1,53 @@
+# InsureIQ — direct dependencies (pinned to the verified working versions)
+# Python 3.11 required
+#
+# These are the top-level packages InsureIQ imports directly. Versions are the
+# exact ones confirmed working on 2026-06-30. For a byte-exact reproduction of
+# the full environment (including every transitive dependency), use:
+#     pip install -r requirements.lock.txt
+
+# Google ADK — agent framework (mandatory for Kaggle course)
+google-adk==1.0.0
+
+# Gemini API (1M context window — handles full insurance docs without chunking)
+google-generativeai==0.8.3
+
+# PDF parsing — better table extraction than PyPDF2, critical for premium schedules
+pdfplumber==0.11.4
+
+# DOCX parsing and generation
+python-docx==1.1.2
+
+# MCP server SDK
+# Note: was 1.3.0 in the original spec — google-adk 1.0.0 requires mcp>=1.5.0
+mcp==1.28.1
+
+# FastAPI + ASGI server
+fastapi==0.115.6
+# Note: was 0.32.1 in the original spec — google-adk 1.0.0 requires uvicorn>=0.34.0
+uvicorn[standard]==0.49.0
+
+# Multipart file uploads
+python-multipart==0.0.12
+
+# Environment variable management — keeps all secrets out of code
+python-dotenv==1.0.1
+
+# HTTP client (for Gemini fallback on scanned PDFs)
+# Note: was 0.27.2 in the original spec — google-genai requires httpx>=0.28.1
+httpx==0.28.1
+
+# Typing extras
+# Note: was 4.12.2 — newer google-genai uses TypedDict(extra_items=...), needs >=4.13
+typing-extensions==4.15.0
+
+# Required by google-adk at import time, but not auto-resolved by pip — pin explicitly
+Deprecated==1.3.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+
+# Logging helpers
+rich==13.9.4
