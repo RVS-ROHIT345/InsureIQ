@@ -68,15 +68,19 @@ def _summarize_for_prompt(
 
     verdict = financial_verdict.get("verdict") or "UNKNOWN"
     fin_plain = (financial_verdict.get("verdict_plain_english") or "").strip()
-    cagr = financial_verdict.get("effective_annual_return_pct")
+    annual_return = financial_verdict.get("effective_annual_return_pct")
 
     overall_risk = risk_flags.get("overall_risk_level") or "NONE"
-    top_flags = [
-        f"- [{f.get('severity')}] {f.get('category')}: {f.get('implication') or f.get('description') or ''}"
-        for f in risk_flags.get("flags", [])[:5]
-        if isinstance(f, dict)
-    ]
-    flags_block = "\n".join(top_flags) if top_flags else "- (no notable flags)"
+    all_flags = [f for f in risk_flags.get("flags", []) if isinstance(f, dict)]
+
+    def _fmt(f: dict) -> str:
+        return f"- [{f.get('severity')}] {f.get('category')}: {f.get('implication') or f.get('description') or ''}"
+
+    # Split so the recommendation can key off genuinely atypical terms, not boilerplate.
+    unusual = [f for f in all_flags if f.get("market_norm") == "unusual"]
+    standard = [f for f in all_flags if f.get("market_norm") != "unusual"]
+    unusual_block = "\n".join(_fmt(f) for f in unusual[:6]) if unusual else "- (none — every flag is standard for this product)"
+    standard_block = "\n".join(_fmt(f) for f in standard[:5]) if standard else "- (none)"
 
     return (
         f"Document type: {document_type} insurance\n"
@@ -84,12 +88,13 @@ def _summarize_for_prompt(
         f"Premium: {premium} | Term: {term} years\n\n"
         f"COVERAGE ({n_covered} covered events, {n_excluded} exclusions):\n{coverage_summary}\n\n"
         f"FINANCIAL VERDICT: {verdict}"
-        + (f" (effective annual return {cagr}%)" if cagr is not None else "")
+        + (f" (effective annual return {annual_return}%)" if annual_return is not None else "")
         + (f"\n{fin_plain}" if fin_plain else "")
         + f"\n\nRISK LEVEL: {overall_risk} "
         f"({risk_flags.get('total_high', 0)} high / {risk_flags.get('total_medium', 0)} medium / "
-        f"{risk_flags.get('total_low', 0)} low)\n"
-        f"Top flags:\n{flags_block}\n"
+        f"{risk_flags.get('total_low', 0)} low; {risk_flags.get('total_unusual', 0)} genuinely unusual)\n\n"
+        f"GENUINELY UNUSUAL terms (atypical for this product — these drive any switch/cancel advice):\n{unusual_block}\n\n"
+        f"STANDARD-FOR-PRODUCT terms (present in most comparable policies — 'know this', NOT reasons to switch):\n{standard_block}\n"
     )
 
 

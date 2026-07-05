@@ -16,6 +16,9 @@ from tools.financial_calculator import (
     calculate_total_premium,
     calculate_cagr,
     calculate_fd_maturity,
+    build_premium_schedule,
+    future_value_of_stream,
+    calculate_irr,
     build_financial_verdict,
 )
 
@@ -131,30 +134,95 @@ class TestCalculateFdMaturity:
         assert calculate_fd_maturity(100000, 0.06, 0) == 100000
 
 
+class TestBuildPremiumSchedule:
+    def test_annual_stream(self):
+        # 3 annual premiums paid at the start of years 0, 1, 2 (annuity-due).
+        assert build_premium_schedule(50000, "annual", 3) == [
+            (0.0, 50000), (1.0, 50000), (2.0, 50000)
+        ]
+
+    def test_monthly_stream_count_and_spacing(self):
+        sched = build_premium_schedule(2000, "monthly", 2)
+        assert len(sched) == 24                      # 12 payments/yr × 2 yrs
+        assert sched[0] == (0.0, 2000)
+        assert sched[1][0] == pytest.approx(1 / 12)  # one month later
+
+    def test_single_premium_is_one_payment_at_time_zero(self):
+        # A single-premium policy is one payment up front, regardless of pay term.
+        assert build_premium_schedule(500000, "single", 20) == [(0.0, 500000)]
+
+
+class TestFutureValueOfStream:
+    def test_single_payment_compounds_like_lump_sum(self):
+        fv = future_value_of_stream([(0.0, 100000)], 0.06, 10)
+        assert fv == pytest.approx(100000 * (1.06 ** 10))
+
+    def test_annuity_due_future_value(self):
+        # 100k paid at t=0,1,2, valued at year 3, at 10%:
+        # 100k(1.1^3 + 1.1^2 + 1.1^1) = 364,100
+        sched = build_premium_schedule(100000, "annual", 3)
+        fv = future_value_of_stream(sched, 0.10, 3)
+        assert fv == pytest.approx(364100, rel=1e-6)
+
+
+class TestCalculateIrr:
+    def test_irr_reproduces_maturity(self):
+        # The defining property: compounding the premium stream at the IRR must
+        # land exactly on the maturity value.
+        sched = build_premium_schedule(52000, "annual", 20)
+        irr = calculate_irr(sched, 1850000, 45)
+        assert future_value_of_stream(sched, irr, 45) == pytest.approx(1850000, rel=1e-6)
+        assert irr == pytest.approx(0.0162, abs=5e-4)
+
+    def test_single_premium_irr_equals_cagr(self):
+        # For a lump sum, IRR must collapse to the simple CAGR.
+        sched = build_premium_schedule(100000, "single", 1)
+        assert calculate_irr(sched, 200000, 10) == pytest.approx(
+            calculate_cagr(100000, 200000, 10), abs=1e-6
+        )
+
+    def test_negative_irr_when_payout_below_paid(self):
+        sched = build_premium_schedule(50000, "annual", 10)
+        assert calculate_irr(sched, 300000, 10) < 0  # paid 500k, got 300k back
+
+    def test_invalid_inputs_return_none(self):
+        sched = build_premium_schedule(50000, "annual", 10)
+        assert calculate_irr([], 100000, 10) is None            # empty stream
+        assert calculate_irr(sched, 0, 10) is None              # no maturity
+        assert calculate_irr(sched, 100000, 0) is None          # no horizon
+        assert calculate_irr([(0.0, 0)], 100000, 10) is None    # nothing paid
+
+
 class TestBuildFinancialVerdict:
+    # New signature: (premium_amount, premium_frequency, pay_term_years,
+    #                 maturity_benefit, policy_term_years, currency_symbol).
+    # Single-premium cases reduce the cash-flow model to simple compounding, which
+    # makes the expected verdict bands easy to reason about.
+
     def test_profit_verdict(self):
-        # 100000 → 300000 over 10 years ≈ 11.6% CAGR → PROFIT
-        result = build_financial_verdict(100000, 300000, 10)
+        # 100k lump → 300k over 10y ≈ 11.6% IRR → PROFIT
+        result = build_financial_verdict(100000, "single", 1, 300000, 10)
         assert result["verdict"] == "PROFIT"
         assert result["effective_annual_return_pct"] > 8
 
     def test_break_even_verdict(self):
-        # ~5% CAGR lands in the 4–8% break-even band
-        result = build_financial_verdict(100000, 163000, 10)
+        # 100k lump → 163k over 10y ≈ 5% IRR → BREAK_EVEN
+        result = build_financial_verdict(100000, "single", 1, 163000, 10)
         assert result["verdict"] == "BREAK_EVEN"
 
     def test_net_loss_verdict(self):
-        # 480000 → 600000 over 20 years ≈ 1.1% CAGR → NET_LOSS
-        result = build_financial_verdict(480000, 600000, 20)
+        # 480k lump → 600k over 20y ≈ 1.1% IRR → NET_LOSS
+        result = build_financial_verdict(480000, "single", 1, 600000, 20)
         assert result["verdict"] == "NET_LOSS"
 
-    def test_unknown_when_cagr_undefined(self):
-        result = build_financial_verdict(0, 100000, 10)
+    def test_unknown_when_return_undefined(self):
+        # Nothing actually paid → IRR undefined → UNKNOWN
+        result = build_financial_verdict(0, "single", 1, 100000, 10)
         assert result["verdict"] == "UNKNOWN"
         assert result["effective_annual_return_pct"] == 0
 
     def test_display_strings_and_benchmarks(self):
-        result = build_financial_verdict(480000, 600000, 20, currency_symbol="₹")
+        result = build_financial_verdict(480000, "single", 1, 600000, 20, currency_symbol="₹")
         assert result["total_premium_paid"] == "₹480,000"
         assert result["maturity_benefit"] == "₹600,000"
         assert result["net_gain_loss"] == "₹+120,000"
@@ -164,5 +232,18 @@ class TestBuildFinancialVerdict:
         assert parse_currency_to_float(result["fd_benchmark_return"]) > 600000
 
     def test_net_loss_shows_negative_sign(self):
-        result = build_financial_verdict(500000, 400000, 10)
+        result = build_financial_verdict(500000, "single", 1, 400000, 10)
         assert result["net_gain_loss"].startswith("₹-")
+
+    def test_stream_benchmarks_are_annuity_not_lump_sum(self):
+        # The real health-policy shape: 52k/yr for 20 yrs, 18.5L at year 45.
+        # Benchmarks must reflect premiums invested AS PAID (annuity FV), which is
+        # far below the old lump-sum-at-year-0 figure (~1.43cr).
+        result = build_financial_verdict(52000, "annual", 20, 1850000, 45)
+        assert result["verdict"] == "NET_LOSS"
+        assert result["effective_annual_return_pct"] == pytest.approx(1.62, abs=0.05)
+        fd = parse_currency_to_float(result["fd_benchmark_return"])
+        assert fd == pytest.approx(8702291, rel=1e-3)
+        # Sanity: the annuity FV is well under the naive lump-sum FD (480k paid
+        # up front would be 1.04M×1.06^45); here total paid is 1.04M over time.
+        assert fd < 1040000 * (1.06 ** 45)

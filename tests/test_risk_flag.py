@@ -102,6 +102,26 @@ class TestNormalizeRiskFlags:
         assert flag["description"] == ""
         assert flag["page_reference"] == ""
 
+    def test_market_norm_carried_and_counted(self):
+        normalized = _normalize_risk_flags({"flags": [
+            {"severity": "HIGH", "market_norm": "unusual"},
+            {"severity": "HIGH", "market_norm": "standard"},
+            {"severity": "LOW", "market_norm": "UNUSUAL"},  # case-insensitive
+        ]})
+        norms = [f["market_norm"] for f in normalized["flags"]]
+        assert norms.count("unusual") == 2
+        assert norms.count("standard") == 1
+        assert normalized["total_unusual"] == 2
+
+    def test_missing_or_invalid_market_norm_defaults_to_standard(self):
+        # A missing or unrecognised value must NOT inflate the switch case.
+        normalized = _normalize_risk_flags({"flags": [
+            {"severity": "HIGH"},                              # missing
+            {"severity": "MEDIUM", "market_norm": "typical"},  # invalid
+        ]})
+        assert all(f["market_norm"] == "standard" for f in normalized["flags"])
+        assert normalized["total_unusual"] == 0
+
 
 class TestRunRiskFlagAgent:
     @patch("agents.risk_flag_agent.genai")

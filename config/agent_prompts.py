@@ -182,6 +182,29 @@ by whether it could theoretically lead to a rejection (nearly any exclusion can)
   UNLESS the wording is unusually broad or the terms are materially worse than the
   norm — in which case raise the severity and state exactly why it is atypical.
 
+In ADDITION to severity, tag every flag with "market_norm" — whether this clause is
+typical for this KIND of policy. Severity says how HARMFUL a clause is; market_norm
+says how TYPICAL it is. They are independent: a clause can be harmful yet completely
+standard (e.g. a home policy excluding flood), and that distinction is what stops the
+report from telling someone to cancel a perfectly ordinary policy.
+
+- "standard": this clause appears in virtually every comparable policy of this type,
+  so it is not a reason to switch insurers — the reader just needs to KNOW it.
+  Examples by type — home: flood / earthquake / earth-movement excluded, named-perils
+  personal property, war & nuclear exclusion, low jewellery/cash sub-limits, standard
+  coinsurance; motor: IMT depreciation schedule, compulsory + voluntary excess, NCB
+  forfeited on a claim, wear-and-tear / drunk-driving / no-valid-licence exclusions;
+  health: initial + pre-existing-disease waiting periods, room-rent capping, cosmetic
+  / self-inflicted exclusions; life: first-year suicide clause, standard contestability.
+- "unusual": atypically insurer-favourable versus the market norm for this product —
+  a genuine differentiator a better policy would not have. Examples: benefits forfeited
+  on a single missed grace period; surrender value far below premiums; a discretionary
+  insurer-set "market value adjustment"; claim voided for INNOCENT non-disclosure;
+  liability shifted back to the policyholder; a maturity age the reader cannot realistically
+  reach; uncapped insurer-set renewal premium hikes; punitive policy-loan interest.
+
+When unsure, default to "standard" — do not inflate the switch case.
+
 Rank flags most-severe first. Prefer a focused list of the genuinely important
 traps over an exhaustive dump of every boilerplate clause.
 
@@ -191,6 +214,7 @@ Return ONLY valid JSON. No preamble, no markdown.
   "flags": [
     {
       "severity": "HIGH|MEDIUM|LOW",
+      "market_norm": "standard|unusual",
       "category": "short category name",
       "description": "what the clause says",
       "implication": "what this means for the policyholder in plain English",
@@ -198,7 +222,7 @@ Return ONLY valid JSON. No preamble, no markdown.
     }
   ],
   "total_high": "number",
-  "total_medium": "number", 
+  "total_medium": "number",
   "total_low": "number",
   "overall_risk_level": "HIGH|MEDIUM|LOW"
 }
@@ -224,4 +248,14 @@ Return ONLY valid JSON. No preamble, no markdown.
   "risk_section_intro": "1-2 sentences introducing the red flags section",
   "recommendation": "The final plain-English verdict. Should this person keep this policy, cancel it, or take specific action? Be direct."
 }
+
+IMPORTANT — calibrate the recommendation. Base any advice to SWITCH or CANCEL on (a)
+the clauses flagged as genuinely UNUSUAL for this type of policy and (b) the financial
+verdict — NOT on clauses that are standard-for-product. Standard exclusions and limits
+(e.g. a home policy excluding flood/earthquake, a motor policy applying depreciation)
+appear in virtually every comparable policy, so switching would not escape them: present
+those as "know this before you sign," never as a reason to cancel. If a policy's only
+issues are standard-for-product, do NOT recommend cancelling — say it is broadly typical
+and highlight what to watch. Reserve "seriously consider cancelling / switching" for
+policies that carry genuinely unusual, insurer-favourable terms or a poor financial deal.
 """

@@ -102,10 +102,30 @@ class TestSummarizeForPrompt:
         assert "HIGH" in summary
         assert "Surrender penalty" in summary
 
+    def test_separates_unusual_from_standard_flags(self):
+        # The digest must split flags so the recommendation keys off atypical terms,
+        # not boilerplate. An unusual flag lands in the "unusual" block; a standard one
+        # (default) lands in the "standard-for-product" block.
+        flags = {
+            "flags": [
+                {"severity": "HIGH", "market_norm": "unusual", "category": "Innocent non-disclosure",
+                 "implication": "Claim void even for an honest mistake"},
+                {"severity": "LOW", "market_norm": "standard", "category": "Flood excluded",
+                 "implication": "Buy separate flood cover"},
+            ],
+            "total_high": 1, "total_low": 1, "total_unusual": 1, "overall_risk_level": "HIGH",
+        }
+        summary = _summarize_for_prompt(POLICY_DATA, COVERAGE_MAP, FINANCIAL_VERDICT, flags, "home")
+        assert "1 genuinely unusual" in summary
+        # The unusual clause is presented as switch-driving; the standard one as "know this".
+        unusual_part = summary.split("STANDARD-FOR-PRODUCT")[0]
+        assert "Innocent non-disclosure" in unusual_part
+        assert "Flood excluded" not in unusual_part
+
     def test_handles_empty_upstream(self):
         # Must not raise on bare dicts (no flags, no coverage).
         summary = _summarize_for_prompt({}, {}, {}, {}, "unknown")
-        assert "no notable flags" in summary
+        assert "every flag is standard for this product" in summary
 
 
 class TestNormalizeReportIntros:

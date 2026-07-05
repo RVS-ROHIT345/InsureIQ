@@ -217,9 +217,9 @@ def _add_financial_section(doc: Document, financial_verdict: dict, report_intros
         ("Total premium paid", _clean(financial_verdict.get("total_premium_paid"))),
         ("Maturity benefit", _clean(financial_verdict.get("maturity_benefit"))),
         ("Net gain / loss", _clean(financial_verdict.get("net_gain_loss"))),
-        ("Effective annual return (CAGR)", _fmt_pct(financial_verdict.get("effective_annual_return_pct"))),
-        ("Same money in a fixed deposit", _clean(financial_verdict.get("fd_benchmark_return"))),
-        ("Same money in an index fund", _clean(financial_verdict.get("index_fund_benchmark_return"))),
+        ("Effective annual return (IRR)", _fmt_pct(financial_verdict.get("effective_annual_return_pct"))),
+        ("Same premiums in a fixed deposit", _clean(financial_verdict.get("fd_benchmark_return"))),
+        ("Same premiums in an index fund", _clean(financial_verdict.get("index_fund_benchmark_return"))),
     ]
     _add_kv_table(doc, metric_rows)
 
@@ -229,7 +229,7 @@ def _add_financial_section(doc: Document, financial_verdict: dict, report_intros
 
 
 def _fmt_pct(value) -> str:
-    """Format a numeric CAGR percentage for display; missing → marker."""
+    """Format a numeric annual-return percentage for display; missing → marker."""
     if value is None:
         return _MISSING
     try:
@@ -256,6 +256,16 @@ def _add_risk_section(doc: Document, risk_flags: dict, report_intros: dict) -> N
         f"{risk_flags.get('total_medium', 0)} medium, "
         f"{risk_flags.get('total_low', 0)} low)"
     )
+    # Call out how many are genuinely atypical vs. standard boilerplate for this
+    # product — the distinction that matters for whether it's worth switching.
+    total_unusual = risk_flags.get("total_unusual")
+    if total_unusual is not None:
+        note = summary_para.add_run(
+            f"  —  {total_unusual} genuinely unusual for this type of policy; "
+            "the rest are standard-for-product."
+        )
+        note.italic = True
+        note.font.size = Pt(9)
 
     flags = risk_flags.get("flags", [])
     if not flags:
@@ -272,6 +282,19 @@ def _add_risk_section(doc: Document, risk_flags: dict, report_intros: dict) -> N
         if severity in _SEVERITY_COLOR:
             sev_run.font.color.rgb = _SEVERITY_COLOR[severity]
         heading.add_run(flag.get("category") or "Uncategorized").bold = True
+        # Badge the atypical ones so the reader can tell a genuine differentiator from
+        # boilerplate every comparable policy also carries.
+        norm = str(flag.get("market_norm", "")).strip().lower()
+        if norm in ("standard", "unusual"):
+            badge = heading.add_run(
+                "  · unusual for this policy type" if norm == "unusual"
+                else "  · standard for this policy type"
+            )
+            badge.italic = True
+            badge.font.size = Pt(9)
+            badge.font.color.rgb = (
+                RGBColor(0xB0, 0x30, 0x30) if norm == "unusual" else RGBColor(0x88, 0x88, 0x88)
+            )
 
         if flag.get("description"):
             doc.add_paragraph(str(flag["description"]))

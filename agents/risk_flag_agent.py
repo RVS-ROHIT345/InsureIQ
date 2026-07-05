@@ -45,6 +45,12 @@ VALID_SEVERITIES = {"HIGH", "MEDIUM", "LOW"}
 # Sort order for presenting flags worst-first.
 _SEVERITY_RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
 
+# Whether a clause is atypical for this product ("unusual") or boilerplate found in
+# virtually every comparable policy ("standard"). Independent of severity: a clause can
+# be harmful yet standard (e.g. flood excluded on home cover). Used downstream so the
+# recommendation only urges switching over genuinely unusual terms — not boilerplate.
+VALID_MARKET_NORMS = {"standard", "unusual"}
+
 # Cap raw-text fallback so a huge scanned doc can't blow up the prompt when the
 # ingestion agent produced no labeled sections. The full context window is large,
 # but there's no value in dumping 100 pages of boilerplate at the risk hunter.
@@ -112,8 +118,12 @@ def _normalize_risk_flags(data: dict) -> dict:
         severity = str(flag.get("severity", "")).strip().upper()
         if severity not in VALID_SEVERITIES:
             severity = "LOW"  # unclassifiable → treat conservatively, don't drop it
+        market_norm = str(flag.get("market_norm", "")).strip().lower()
+        if market_norm not in VALID_MARKET_NORMS:
+            market_norm = "standard"  # default to boilerplate → never inflate the switch case
         clean_flags.append({
             "severity": severity,
+            "market_norm": market_norm,
             "category": flag.get("category") or "Uncategorized",
             "description": flag.get("description") or "",
             "implication": flag.get("implication") or "",
@@ -125,6 +135,8 @@ def _normalize_risk_flags(data: dict) -> dict:
     total_high = sum(1 for f in clean_flags if f["severity"] == "HIGH")
     total_medium = sum(1 for f in clean_flags if f["severity"] == "MEDIUM")
     total_low = sum(1 for f in clean_flags if f["severity"] == "LOW")
+    # Genuinely atypical terms — the ones that actually justify switching insurers.
+    total_unusual = sum(1 for f in clean_flags if f["market_norm"] == "unusual")
 
     if total_high:
         overall = "HIGH"
@@ -140,6 +152,7 @@ def _normalize_risk_flags(data: dict) -> dict:
         "total_high": total_high,
         "total_medium": total_medium,
         "total_low": total_low,
+        "total_unusual": total_unusual,
         "overall_risk_level": overall,
     }
 
