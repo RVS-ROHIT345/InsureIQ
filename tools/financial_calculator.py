@@ -234,8 +234,126 @@ def calculate_fd_maturity(
     return maturity
 
 
+# ─── Cash-flow model ──────────────────────────────────────────────────────────
+# Premiums aren't paid as a lump sum on day one — they're a *stream* paid over the
+# premium-paying term. Modelling that stream (rather than pretending the whole
+# amount was invested up front) is what makes the policy return and the benchmarks
+# realistic and mutually consistent.
+
+def build_premium_schedule(
+    premium_amount: float,
+    premium_frequency: str,
+    pay_term_years: float,
+) -> list[tuple[float, float]]:
+    """
+    Build the actual premium payment stream as (time_in_years, amount) tuples.
+
+    Payments are modelled as an annuity-due — each premium is paid at the START of
+    its period (t = 0, 1/k, 2/k, …), which is how insurance premiums are actually
+    collected. A single-premium policy is one payment at t = 0.
+
+    Args:
+        premium_amount: Amount of ONE premium payment
+        premium_frequency: "monthly" | "quarterly" | "semi-annual" | "annual" | "single"
+        pay_term_years: Years premiums are actually paid
+
+    Returns:
+        List of (time_years, amount) payments, earliest first.
+    """
+    frequency_key = (premium_frequency or "annual").strip().lower()
+    payments_per_year = PAYMENTS_PER_YEAR.get(frequency_key, 1)
+
+    if payments_per_year == 1 and frequency_key in ("single", "one-time"):
+        return [(0.0, premium_amount)]
+
+    n_payments = int(round(payments_per_year * (pay_term_years or 0)))
+    interval = 1.0 / payments_per_year
+    return [(i * interval, premium_amount) for i in range(n_payments)]
+
+
+def future_value_of_stream(
+    schedule: list[tuple[float, float]],
+    annual_rate: float,
+    horizon_years: float,
+) -> float:
+    """
+    Future value at `horizon_years` of a payment stream invested at `annual_rate`.
+
+    Each payment compounds from the moment it is made until the horizon, so money
+    paid in year 1 grows longer than money paid in year 20. This is the correct
+    "what if you'd invested the same premiums instead?" benchmark — an annuity's
+    future value, not a lump sum sitting from day one.
+
+    Args:
+        schedule: (time_years, amount) payments from build_premium_schedule
+        annual_rate: Growth rate as a decimal (e.g. 0.06)
+        horizon_years: When the money is valued (the policy maturity date)
+
+    Returns:
+        Total future value of the stream at the horizon.
+    """
+    return sum(
+        amount * ((1 + annual_rate) ** (horizon_years - t)) for t, amount in schedule
+    )
+
+
+def calculate_irr(
+    schedule: list[tuple[float, float]],
+    maturity_value: float,
+    horizon_years: float,
+) -> Optional[float]:
+    """
+    Money-weighted annual return (IRR) of the policy: the single rate at which the
+    premium stream, compounded to the maturity horizon, equals the maturity payout.
+
+    This replaces a naive lump-sum CAGR — because premiums are paid over time, a
+    CAGR that assumes the whole amount was invested on day one understates the true
+    return. IRR accounts for *when* each rupee was actually paid.
+
+    Found by bisection: future_value_of_stream is strictly increasing in the rate,
+    so a sign change is guaranteed to bracket exactly one root.
+
+    Args:
+        schedule: (time_years, amount) premium payments
+        maturity_value: Payout received at horizon_years
+        horizon_years: Policy maturity (growth horizon) in years
+
+    Returns:
+        IRR as a decimal (e.g. 0.0162 = 1.62%), possibly negative if the policy
+        pays back less than was paid in. None if undefined.
+    """
+    total_paid = sum(amount for _, amount in schedule)
+    if not schedule or maturity_value <= 0 or horizon_years <= 0 or total_paid <= 0:
+        logger.warning("IRR calculation skipped: invalid inputs")
+        return None
+
+    def net(rate: float) -> float:
+        return future_value_of_stream(schedule, rate, horizon_years) - maturity_value
+
+    low, high = -0.9999, 10.0  # -99.99% to +1000% annual brackets any real policy
+    net_low = net(low)
+    if (net_low > 0) == (net(high) > 0):
+        logger.warning("IRR calculation skipped: no sign change in bracket")
+        return None
+
+    for _ in range(100):
+        mid = (low + high) / 2.0
+        if (net(mid) > 0) == (net_low > 0):
+            low = mid
+        else:
+            high = mid
+        if high - low < 1e-10:
+            break
+
+    irr = (low + high) / 2.0
+    logger.debug(f"IRR: {irr:.4f} ({irr * 100:.2f}%)")
+    return irr
+
+
 def build_financial_verdict(
-    total_premium: float,
+    premium_amount: float,
+    premium_frequency: str,
+    pay_term_years: float,
     maturity_benefit: float,
     policy_term_years: float,
     currency_symbol: str = "₹",
@@ -244,28 +362,38 @@ def build_financial_verdict(
     Master function: compute all financial metrics and return a verdict dict.
     This is what the Financial Evaluator Agent (Agent 4) calls as its ADK tool.
 
-    The verdict is derived from CAGR (effective annual return), not raw gain, so
+    Uses a cash-flow model throughout: the policy's return is the IRR of the actual
+    premium stream, and the FD / index benchmarks are the future value of that SAME
+    stream invested elsewhere. Policy and benchmarks are therefore computed on an
+    identical, realistic basis — no lump-sum-on-day-one distortion.
+
+    The verdict is derived from the effective annual return (IRR), not raw gain, so
     a policy that "grows" your money slower than inflation is correctly flagged.
 
     Args:
-        total_premium: Total premiums paid over policy term
+        premium_amount: Amount of ONE premium payment
+        premium_frequency: Payment frequency ("annual", "monthly", "single", …)
+        pay_term_years: Years premiums are actually paid (drives the stream length)
         maturity_benefit: Promised payout at maturity
-        policy_term_years: Policy duration in years
+        policy_term_years: Policy duration in years (the growth horizon)
         currency_symbol: Currency prefix for display strings
 
     Returns:
         Dict with all computed metrics and a PROFIT/BREAK_EVEN/NET_LOSS verdict
     """
+    schedule = build_premium_schedule(premium_amount, premium_frequency, pay_term_years)
+    total_premium = sum(amount for _, amount in schedule)
     net_gain_loss = maturity_benefit - total_premium
-    cagr = calculate_cagr(total_premium, maturity_benefit, policy_term_years)
-    fd_return = calculate_fd_maturity(total_premium, FD_BENCHMARK_RATE, policy_term_years)
-    index_return = calculate_fd_maturity(total_premium, INDEX_BENCHMARK_RATE, policy_term_years)
 
-    if cagr is None:
+    irr = calculate_irr(schedule, maturity_benefit, policy_term_years)
+    fd_return = future_value_of_stream(schedule, FD_BENCHMARK_RATE, policy_term_years)
+    index_return = future_value_of_stream(schedule, INDEX_BENCHMARK_RATE, policy_term_years)
+
+    if irr is None:
         verdict = "UNKNOWN"
-    elif cagr >= 0.08:       # 8%+ genuinely beats inflation and most safe options
+    elif irr >= 0.08:        # 8%+ genuinely beats inflation and most safe options
         verdict = "PROFIT"
-    elif cagr >= 0.04:       # 4–8% roughly keeps pace with inflation
+    elif irr >= 0.04:        # 4–8% roughly keeps pace with inflation
         verdict = "BREAK_EVEN"
     else:                    # under 4% (or negative) — money lost real value
         verdict = "NET_LOSS"
@@ -274,7 +402,7 @@ def build_financial_verdict(
         "total_premium_paid": f"{currency_symbol}{total_premium:,.0f}",
         "maturity_benefit": f"{currency_symbol}{maturity_benefit:,.0f}",
         "net_gain_loss": f"{currency_symbol}{net_gain_loss:+,.0f}",
-        "effective_annual_return_pct": round((cagr or 0) * 100, 2),
+        "effective_annual_return_pct": round((irr or 0) * 100, 2),
         "fd_benchmark_return": f"{currency_symbol}{fd_return:,.0f}",
         "index_fund_benchmark_return": f"{currency_symbol}{index_return:,.0f}",
         "fd_benchmark_pct": round(FD_BENCHMARK_RATE * 100, 1),
