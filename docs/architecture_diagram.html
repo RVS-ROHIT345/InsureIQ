@@ -1,0 +1,303 @@
+<style>
+  :root {
+    --ground-1: #f6f7f4;
+    --ground-2: #e9ebe5;
+    --panel: #ffffff;
+    --panel-2: #eef0ea;
+    --ink: #141c26;
+    --ink-soft: #4d5966;
+    --ink-faint: #808b97;
+    --line: #d6dad1;
+    --rail: #cfd4ca;
+    --brass: #a9761f;
+    --brass-ink: #ffffff;
+    --good: #2f8f5b;
+    --warn: #b9821c;
+    --crit: #bf5238;
+    --shadow: 0 1px 2px rgba(20,28,38,.05), 0 10px 30px rgba(20,28,38,.08);
+    --radius: 13px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground-1: #0f1620;
+      --ground-2: #0a0e14;
+      --panel: #172029;
+      --panel-2: #202b36;
+      --ink: #eaeef3;
+      --ink-soft: #9ba7b4;
+      --ink-faint: #66717e;
+      --line: #2a3641;
+      --rail: #33404d;
+      --brass: #e3b45e;
+      --brass-ink: #1a1206;
+      --good: #5cbf86;
+      --warn: #e3b155;
+      --crit: #e8795f;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 38px rgba(0,0,0,.42);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground-1: #f6f7f4; --ground-2: #e9ebe5; --panel: #ffffff; --panel-2: #eef0ea;
+    --ink: #141c26; --ink-soft: #4d5966; --ink-faint: #808b97; --line: #d6dad1;
+    --rail: #cfd4ca; --brass: #a9761f; --brass-ink: #ffffff;
+    --good: #2f8f5b; --warn: #b9821c; --crit: #bf5238;
+    --shadow: 0 1px 2px rgba(20,28,38,.05), 0 10px 30px rgba(20,28,38,.08);
+  }
+  :root[data-theme="dark"] {
+    --ground-1: #0f1620; --ground-2: #0a0e14; --panel: #172029; --panel-2: #202b36;
+    --ink: #eaeef3; --ink-soft: #9ba7b4; --ink-faint: #66717e; --line: #2a3641;
+    --rail: #33404d; --brass: #e3b45e; --brass-ink: #1a1206;
+    --good: #5cbf86; --warn: #e3b155; --crit: #e8795f;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 38px rgba(0,0,0,.42);
+  }
+
+  * { box-sizing: border-box; }
+
+  .wrap {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(120% 120% at 15% 0%, var(--ground-1), var(--ground-2));
+    color: var(--ink);
+    min-height: 100vh;
+    padding: clamp(20px, 3vw, 44px) clamp(20px, 4vw, 56px);
+    display: flex; flex-direction: column;
+    gap: clamp(20px, 3vh, 40px);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: auto;
+  }
+
+  /* ── header ── */
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .logo { font-size: clamp(24px, 3vw, 40px); font-weight: 800; letter-spacing: -.025em; }
+  .logo b { color: var(--brass); }
+  .tag { font-size: clamp(12px, 1.1vw, 15px); color: var(--ink-soft); font-weight: 600; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .18em; font-size: 11px; font-weight: 700; color: var(--brass); }
+
+  /* ── the transit line ── */
+  .line {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: clamp(6px, 1vw, 20px);
+    min-width: 940px;
+    min-height: 360px;
+    padding: 0 4px;
+  }
+  /* the rail itself */
+  .line::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 4px; transform: translateY(-50%); border-radius: 4px;
+    background-image: repeating-linear-gradient(90deg,
+      var(--rail) 0 14px, transparent 14px 24px);
+    background-size: 24px 4px;
+    animation: march 900ms linear infinite;
+  }
+  /* a solid under-glow so the rail reads as continuous */
+  .line::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 2px; transform: translateY(-50%);
+    background: color-mix(in srgb, var(--rail) 55%, transparent);
+    z-index: -1;
+  }
+  @keyframes march { to { background-position: 24px 0; } }
+
+  /* a data pulse travelling the line */
+  .pulse {
+    position: absolute; top: 50%; left: 0; width: 12px; height: 12px;
+    margin-top: -6px; border-radius: 50%;
+    background: var(--brass);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brass) 26%, transparent),
+                0 0 16px 2px var(--brass);
+    animation: travel 4.6s cubic-bezier(.65,0,.35,1) infinite;
+    z-index: 4;
+  }
+  @keyframes travel {
+    0% { left: 2%; opacity: 0; }
+    6% { opacity: 1; }
+    94% { opacity: 1; }
+    100% { left: 98%; opacity: 0; }
+  }
+
+  /* each stop */
+  .stop { position: relative; flex: 1 1 0; display: flex; justify-content: center; align-self: stretch; }
+
+  .node {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--panel); border: 2px solid var(--line);
+    font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums;
+    color: var(--ink-soft); box-shadow: var(--shadow); z-index: 3;
+  }
+  .stop.star .node { border-color: var(--brass); background: var(--brass); color: var(--brass-ink); }
+
+  /* connector payload label, riding the rail to the right of each node */
+  .pay {
+    position: absolute; top: 50%; left: calc(50% + 30px);
+    transform: translateY(-50%);
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 10.5px; color: var(--ink-faint);
+    background: var(--ground-1);
+    padding: 1px 6px; border-radius: 5px; white-space: nowrap; z-index: 2;
+    letter-spacing: -.02em;
+  }
+
+  /* the card floats above or below its node */
+  .card {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    width: clamp(128px, 12vw, 168px);
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 12px 13px;
+    box-shadow: var(--shadow); text-align: left;
+  }
+  .up   .card { bottom: calc(50% + 40px); }
+  .down .card { top: calc(50% + 40px); }
+  /* a stem from node to card */
+  .up   .card::after, .down .card::after {
+    content: ""; position: absolute; left: 50%; width: 2px; height: 22px;
+    background: var(--line); transform: translateX(-50%);
+  }
+  .up   .card::after { bottom: -22px; }
+  .down .card::after { top: -22px; }
+
+  .stop.star .card { border-color: var(--brass); }
+  .stop.star .card .name { color: var(--brass); }
+  .card .name { font-size: clamp(13px, 1.05vw, 15px); font-weight: 750; letter-spacing: -.01em; line-height: 1.15; }
+  .card .role { margin-top: 4px; font-size: 11.5px; color: var(--ink-soft); line-height: 1.32; }
+
+  /* endpoints (document in, report out) */
+  .end .node {
+    width: 58px; height: 58px; font-size: 24px;
+    background: var(--panel-2); border-style: solid;
+  }
+  .end .cap {
+    position: absolute; left: 50%; top: calc(50% + 46px); transform: translateX(-50%);
+    width: max-content; max-width: 210px; text-align: center;
+  }
+  .end .cap .t { font-weight: 750; font-size: 13.5px; }
+  .end .cap .s { margin-top: 3px; font-size: 11px; color: var(--ink-faint); line-height: 1.35; }
+  .end.out .cap { top: auto; bottom: calc(50% + 46px); }
+  .end.out .node { border-color: var(--brass); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brass) 15%, transparent), var(--shadow); }
+  .outchips { display: flex; gap: 5px; justify-content: center; margin-top: 7px; flex-wrap: wrap; }
+  .outchips span { font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .01em; }
+  .oc-1 { background: color-mix(in srgb, var(--brass) 18%, transparent); color: var(--brass); }
+  .oc-2 { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+  .oc-3 { background: color-mix(in srgb, var(--crit) 16%, transparent); color: var(--crit); }
+
+  /* ── footer: principle + stack ── */
+  .foot { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: stretch; }
+  @media (max-width: 820px) { .foot { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); }
+  .panel.pri { border-left: 4px solid var(--brass); }
+  .panel .eyebrow { display: block; margin-bottom: 8px; }
+  .panel p { margin: 0; font-size: clamp(12.5px, 1vw, 14.5px); line-height: 1.5; color: var(--ink-soft); }
+  .panel p strong { color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { font-size: 12px; font-weight: 600; color: var(--ink-soft); background: var(--panel-2); border: 1px solid var(--line); padding: 5px 11px; border-radius: 8px; }
+  .chip b { color: var(--brass); font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .line::before { animation: none; }
+    .pulse { display: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+      <span class="logo">Insure<b>IQ</b></span>
+      <span class="tag">A dense policy in → a plain-English decision out, in ~30 seconds</span>
+    </div>
+    <span class="eyebrow">6-Agent Pipeline · Google ADK</span>
+  </header>
+
+  <div class="line">
+    <div class="pulse" aria-hidden="true"></div>
+
+    <!-- input -->
+    <div class="stop end in">
+      <div class="node">📄</div>
+      <div class="pay">file</div>
+      <div class="cap">
+        <div class="t">Insurance policy</div>
+        <div class="s">PDF / DOCX — validated by the MCP file server (magic bytes)</div>
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <div class="stop up">
+      <div class="node">1</div>
+      <div class="pay">text + type</div>
+      <div class="card"><div class="name">Ingestion</div><div class="role">Reads &amp; classifies the file · Gemini-vision fallback for scans</div></div>
+    </div>
+
+    <!-- 2 -->
+    <div class="stop down">
+      <div class="node">2</div>
+      <div class="pay">policy facts</div>
+      <div class="card"><div class="name">Policy Extractor</div><div class="role">Premium, sum assured, dates &amp; the maturity date</div></div>
+    </div>
+
+    <!-- 3 -->
+    <div class="stop up">
+      <div class="node">3</div>
+      <div class="pay">coverage</div>
+      <div class="card"><div class="name">Coverage Analyzer</div><div class="role">Covered vs excluded · waiting periods · sub-limits</div></div>
+    </div>
+
+    <!-- 4 -->
+    <div class="stop down star">
+      <div class="node">4</div>
+      <div class="pay">verdict</div>
+      <div class="card"><div class="name">Financial Evaluator</div><div class="role">Real calculator: return vs FD &amp; index → Profit / Loss</div></div>
+    </div>
+
+    <!-- 5 -->
+    <div class="stop up star">
+      <div class="node">5</div>
+      <div class="pay">flags</div>
+      <div class="card"><div class="name">Risk Flag</div><div class="role">Fine-print traps, rated — boilerplate vs genuinely unusual</div></div>
+    </div>
+
+    <!-- 6 -->
+    <div class="stop down">
+      <div class="node">6</div>
+      <div class="pay">.docx</div>
+      <div class="card"><div class="name">Report Composer</div><div class="role">Assembles the plain-English Word report</div></div>
+    </div>
+
+    <!-- output -->
+    <div class="stop end out">
+      <div class="node">📝</div>
+      <div class="cap">
+        <div class="t">Decision report</div>
+        <div class="outchips">
+          <span class="oc-1">maturity date</span>
+          <span class="oc-2">verdict</span>
+          <span class="oc-3">red flags</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="panel pri">
+      <span class="eyebrow">Why it's trustworthy</span>
+      <p><strong>Numbers vs. prose.</strong> Every figure a user sees — return rate,
+      maturity value, benchmarks — is computed by <strong>deterministic Python</strong>,
+      never guessed by the model. Gemini writes only the narrative <em>around</em> numbers
+      it can't touch. That's what makes the verdict dependable, and testable by a
+      <strong>192-test suite that needs no API key</strong>.</p>
+    </div>
+    <div class="panel">
+      <span class="eyebrow">Built with</span>
+      <div class="chips">
+        <span class="chip"><b>Google ADK</b> · LlmAgent ×6</span>
+        <span class="chip"><b>Gemini 2.5 Flash</b></span>
+        <span class="chip"><b>MCP</b> file server</span>
+        <span class="chip">FastAPI</span>
+        <span class="chip">python-docx</span>
+        <span class="chip">Docker · $PORT</span>
+      </div>
+    </div>
+  </div>
+</div>

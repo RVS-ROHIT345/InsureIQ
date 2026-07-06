@@ -1,0 +1,161 @@
+<style>
+  :root {
+    --ground-1: #f6f7f4; --ground-2: #e9ebe5; --panel: #ffffff; --panel-2: #eef0ea;
+    --ink: #141c26; --ink-soft: #4d5966; --ink-faint: #808b97; --line: #d6dad1;
+    --brass: #a9761f; --brass-ink: #ffffff;
+    --good: #2f8f5b; --good-bg: #e3f1e8; --crit: #bf5238; --crit-bg: #f6e4df;
+    --shadow: 0 1px 2px rgba(20,28,38,.05), 0 10px 30px rgba(20,28,38,.08);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground-1: #0f1620; --ground-2: #0a0e14; --panel: #172029; --panel-2: #202b36;
+      --ink: #eaeef3; --ink-soft: #9ba7b4; --ink-faint: #66717e; --line: #2a3641;
+      --brass: #e3b45e; --brass-ink: #1a1206;
+      --good: #5cbf86; --good-bg: #14281d; --crit: #e8795f; --crit-bg: #2c1712;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 38px rgba(0,0,0,.42);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground-1: #f6f7f4; --ground-2: #e9ebe5; --panel: #ffffff; --panel-2: #eef0ea;
+    --ink: #141c26; --ink-soft: #4d5966; --ink-faint: #808b97; --line: #d6dad1;
+    --brass: #a9761f; --brass-ink: #ffffff;
+    --good: #2f8f5b; --good-bg: #e3f1e8; --crit: #bf5238; --crit-bg: #f6e4df;
+    --shadow: 0 1px 2px rgba(20,28,38,.05), 0 10px 30px rgba(20,28,38,.08);
+  }
+  :root[data-theme="dark"] {
+    --ground-1: #0f1620; --ground-2: #0a0e14; --panel: #172029; --panel-2: #202b36;
+    --ink: #eaeef3; --ink-soft: #9ba7b4; --ink-faint: #66717e; --line: #2a3641;
+    --brass: #e3b45e; --brass-ink: #1a1206;
+    --good: #5cbf86; --good-bg: #14281d; --crit: #e8795f; --crit-bg: #2c1712;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 38px rgba(0,0,0,.42);
+  }
+
+  * { box-sizing: border-box; }
+  .wrap {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(120% 120% at 15% 0%, var(--ground-1), var(--ground-2));
+    color: var(--ink); min-height: 100vh;
+    padding: clamp(22px, 3.2vw, 48px) clamp(22px, 4vw, 60px);
+    display: flex; flex-direction: column; gap: clamp(20px, 3vh, 38px);
+    -webkit-font-smoothing: antialiased;
+  }
+  .head { text-align: center; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .18em; font-size: 12px; font-weight: 700; color: var(--brass); }
+  .head h1 { margin: 8px 0 0; font-size: clamp(26px, 3.4vw, 44px); font-weight: 800; letter-spacing: -.025em; text-wrap: balance; }
+  .head h1 b { color: var(--brass); }
+
+  .cols { flex: 1 1 auto; display: grid; grid-template-columns: 1fr auto 1fr; gap: clamp(14px, 2vw, 30px); align-items: stretch; }
+  @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } .vs { display: none; } }
+
+  .col {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: clamp(20px, 2vw, 30px); box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .col.win { border-color: var(--brass); border-width: 1.5px; }
+  .col .label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .col.win .label { color: var(--brass); }
+  .col h2 { margin: 2px 0 0; font-size: clamp(18px, 1.7vw, 24px); font-weight: 780; letter-spacing: -.01em; line-height: 1.15; }
+
+  /* the tiny diagram at the top of each column */
+  .mini { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0 2px; }
+  .blob {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 12px; font-size: 13px; font-weight: 650; white-space: nowrap;
+  }
+  .blob.big { padding: 12px 16px; font-weight: 750; }
+  .blob.doc { color: var(--ink-soft); }
+  .to { color: var(--ink-faint); font-weight: 800; font-size: 16px; }
+  .dot {
+    width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+    background: var(--panel-2); border: 1.5px solid var(--line); color: var(--ink-soft);
+  }
+  .dot.b { background: var(--brass); border-color: var(--brass); color: var(--brass-ink); }
+  .chain { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .chain .lnk { color: var(--ink-faint); font-weight: 700; }
+
+  ul.points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+  ul.points li { display: flex; gap: 11px; font-size: clamp(13.5px, 1.15vw, 16px); line-height: 1.42; color: var(--ink-soft); }
+  ul.points li b { color: var(--ink); font-weight: 700; }
+  .ic { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .ic.bad { background: var(--crit-bg); color: var(--crit); }
+  .ic.good { background: var(--good-bg); color: var(--good); }
+
+  .vs {
+    align-self: center; font-size: 15px; font-weight: 800; letter-spacing: .08em;
+    color: var(--ink-faint); background: var(--panel); border: 1px solid var(--line);
+    width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; box-shadow: var(--shadow);
+  }
+
+  .kicker {
+    text-align: center; font-size: clamp(13px, 1.15vw, 16px); color: var(--ink-soft);
+    max-width: 900px; margin: 0 auto; line-height: 1.5;
+  }
+  .kicker b { color: var(--brass); }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <span class="eyebrow">Why not just one big prompt?</span>
+    <h1>One LLM call guesses. <b>Six agents decide.</b></h1>
+  </header>
+
+  <div class="cols">
+    <!-- naive -->
+    <section class="col">
+      <div>
+        <span class="label">The obvious approach</span>
+        <h2>Paste the whole policy into one giant prompt</h2>
+      </div>
+      <div class="mini">
+        <span class="blob doc">📄 14-page policy</span>
+        <span class="to">→</span>
+        <span class="blob big">🧠 one LLM call</span>
+        <span class="to">→</span>
+        <span class="blob doc">“analysis”</span>
+      </div>
+      <ul class="points">
+        <li><span class="ic bad">✕</span><span>It will <b>invent a maturity value or a return rate</b> — a language model predicts text, it doesn't do arithmetic.</span></li>
+        <li><span class="ic bad">✕</span><span>Four different jobs — classify, extract, calculate, judge risk — <b>blur into one blob</b> of reasoning.</span></li>
+        <li><span class="ic bad">✕</span><span>One bad token and the <b>whole answer is wrong</b>, with no way to see which part failed.</span></li>
+        <li><span class="ic bad">✕</span><span><b>Untestable</b> — you can't verify a figure it made up, and every check costs an API call.</span></li>
+      </ul>
+    </section>
+
+    <div class="vs">VS</div>
+
+    <!-- InsureIQ -->
+    <section class="col win">
+      <div>
+        <span class="label">InsureIQ</span>
+        <h2>Six focused agents, each with one job, in a chain</h2>
+      </div>
+      <div class="mini">
+        <span class="blob doc">📄</span>
+        <span class="to">→</span>
+        <div class="chain">
+          <span class="dot">1</span><span class="lnk">›</span>
+          <span class="dot">2</span><span class="lnk">›</span>
+          <span class="dot">3</span><span class="lnk">›</span>
+          <span class="dot b">4</span><span class="lnk">›</span>
+          <span class="dot b">5</span><span class="lnk">›</span>
+          <span class="dot">6</span>
+        </div>
+        <span class="to">→</span>
+        <span class="blob doc">📝 report</span>
+      </div>
+      <ul class="points">
+        <li><span class="ic good">✓</span><span>Every figure is <b>computed by deterministic Python</b>, not guessed — the model literally can't invent a number.</span></li>
+        <li><span class="ic good">✓</span><span>Each agent has <b>one job and one focused prompt</b> — extraction, coverage, finance, and risk stay separate.</span></li>
+        <li><span class="ic good">✓</span><span>Failures are <b>isolated and inspectable</b> — you see exactly which agent produced what.</span></li>
+        <li><span class="ic good">✓</span><span>The whole pipeline is <b>testable with no API key</b> — a 192-test suite mocks the model and runs in seconds.</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <p class="kicker">The difference between a demo and something you'd trust with a financial decision:
+  <b>numbers vs. prose</b> — real code does the math, the model only writes the plain-English explanation around it.</p>
+</div>

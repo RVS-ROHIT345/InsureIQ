@@ -243,8 +243,6 @@ covering all four supported types in both PDF and DOCX:
 | Car | `sample_car_insurance.pdf` / `.docx`, `sample_car_insurance_cover_note.*` (sparse edge case) |
 | Home | `sample_home_insurance.pdf` / `.docx` |
 
-They are reproducible via `python scripts/generate_sample_docs.py` (requires `reportlab`, a dev/test-only dependency).
-
 ## Project Structure
 
 ```
@@ -255,7 +253,7 @@ insureiq/
 ├── tools/                      # financial_calculator, report_generator, file_validation, document_parser
 ├── mcp_server/                 # MCP file server (upload + validate tools)
 ├── config/                     # settings.py + agent_prompts.py
-├── scripts/                    # smoke_test.py, generate_sample_docs.py
+├── scripts/                    # smoke_test.py, demo_run.py
 ├── sample_docs/                # Bundled test documents (all 4 types, PDF + DOCX)
 ├── tests/                      # 192 mocked tests (no API key needed)
 ├── docs/architecture.md        # Deeper architecture write-up
@@ -272,7 +270,6 @@ insureiq/
 | Agent Skills (ADK tools) | `tools/financial_calculator.py` registered as an ADK FunctionTool |
 | Security features | Input validation, magic-bytes checks, `.env` secrets, in-memory processing |
 | Deployability | `Dockerfile`, `docker-compose.yml`, `$PORT`-aware, Cloud Run / Render ready |
-| Antigravity | Demonstrated in the submission video |
 
 ## Security
 
