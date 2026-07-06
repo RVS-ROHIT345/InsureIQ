@@ -81,7 +81,9 @@ def run_pipeline(file_bytes: bytes, filename: str) -> dict:
     # ── Agent 4: Financial Evaluator ──────────────────────────────────────────
     logger.info("▶ Agent 4: Financial Evaluator")
     agent4_start = time.time()
-    financial_verdict = run_financial_evaluator_agent(policy_data)
+    financial_verdict = run_financial_evaluator_agent(
+        policy_data, document_type=ingestion_result.get("document_type", "unknown")
+    )
     results["financial_verdict"] = financial_verdict
     logger.info(f"✓ Agent 4 complete ({time.time() - agent4_start:.1f}s) — verdict: {financial_verdict.get('verdict')}")
 

@@ -32,6 +32,21 @@ from tools.document_parser import (
 
 logger = logging.getLogger(__name__)
 
+# Keyword fast-path thresholds. The classifier only skips the Gemini call when a
+# type has at least MIN_KEYWORD_SCORE matches AND leads the runner-up by at least
+# KEYWORD_CONFIDENCE_MARGIN — otherwise it's too close to call and we defer to
+# Gemini. (A pure count >= 2 with no margin mislabels hybrid docs, e.g. a
+# health-cum-endowment policy that scores on both health and life keywords.)
+MIN_KEYWORD_SCORE = 2
+KEYWORD_CONFIDENCE_MARGIN = 2
+
+# How much text the keyword scan reads. Kept to the opening pages (declarations
+# + schedule) where type vocabulary is densest — but wide enough that keywords
+# living in a DOCX's tables (python-docx appends all tables *after* the body
+# paragraphs) still land inside the window. 3000 was too tight for table-heavy
+# schedules; 6000 covers them without pulling in unrelated late-document noise.
+KEYWORD_SAMPLE_CHARS = 6000
+
 
 def _detect_document_type_by_keywords(text: str) -> str:
     """
@@ -39,12 +54,12 @@ def _detect_document_type_by_keywords(text: str) -> str:
     Run this first — if confident, skip the Gemini API call to save latency.
 
     Args:
-        text: Extracted document text (first 3000 chars used)
+        text: Extracted document text (first KEYWORD_SAMPLE_CHARS chars used)
 
     Returns:
         Document type: "health" | "life" | "car" | "home" | "unknown"
     """
-    sample = text[:3000].lower()
+    sample = text[:KEYWORD_SAMPLE_CHARS].lower()
     scores = {}
 
     for doc_type, keywords in settings.DOC_TYPE_KEYWORDS.items():
@@ -52,15 +67,27 @@ def _detect_document_type_by_keywords(text: str) -> str:
         scores[doc_type] = score
         logger.debug(f"Type detection score — {doc_type}: {score}")
 
-    best_type = max(scores, key=scores.get)
-    best_score = scores[best_type]
+    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+    best_type, best_score = ranked[0]
+    second_score = ranked[1][1] if len(ranked) > 1 else 0
 
-    # Only trust keyword detection if we have a clear winner (2+ matches)
-    if best_score >= 2:
-        logger.info(f"Document type detected by keywords: {best_type} (score: {best_score})")
+    # Only trust the keyword fast-path when there's a CLEAR winner: enough raw
+    # matches AND a decisive lead over the runner-up. The margin guard matters
+    # for hybrid documents — e.g. a "health cum savings endowment" policy scores
+    # on both health and life keywords, and a bare 3-vs-2 edge is not enough to
+    # confidently pick one. When it's close, we return "unknown" and let the
+    # Gemini classifier (which reads meaning, not keyword counts) decide.
+    if best_score >= MIN_KEYWORD_SCORE and (best_score - second_score) >= KEYWORD_CONFIDENCE_MARGIN:
+        logger.info(
+            f"Document type detected by keywords: {best_type} "
+            f"(score: {best_score}, margin: {best_score - second_score})"
+        )
         return best_type
 
-    logger.info(f"Keyword detection inconclusive (best: {best_type}, score: {best_score}). Will use Gemini.")
+    logger.info(
+        f"Keyword detection inconclusive (best: {best_type}={best_score}, "
+        f"runner-up={second_score}). Will use Gemini."
+    )
     return "unknown"
 
 

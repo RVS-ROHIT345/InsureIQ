@@ -50,6 +50,3 @@ tmp/
 # === Output reports — generated at runtime ===
 output/
 reports/
-
-# === Docker ===
-.dockerignore

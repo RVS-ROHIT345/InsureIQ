@@ -217,7 +217,107 @@ real-document sanity checks only.
 
 ---
 
-## Day 6 — Real document testing + Docker [ ] Not started
+## Day 6 — Real document testing + Docker ✅
+
+**Completed:**
+- [x] scripts/generate_sample_docs.py — new committed, reproducible generator that
+      produces realistic *synthetic* health/car/home policies in BOTH PDF (ReportLab)
+      and DOCX (python-docx), plus a deliberately-sparse car "cover note" edge case.
+      Idempotent (skips existing files unless --force), so the hand-tuned Day-2 life
+      fixtures are left untouched. Each doc weaves in enough type-specific vocabulary
+      (config.DOC_TYPE_KEYWORDS) that the keyword classifier resolves the type with
+      NO Gemini call — which is what makes the corpus testable offline.
+- [x] sample_docs/ — corpus now covers all four advertised types: health (pdf+docx),
+      car (pdf+docx), home (pdf+docx), sparse car cover-note (docx), + existing life
+      (pdf+docx). 9 fixtures total, every one validated/parsed/classified.
+- [x] tests/test_sample_docs.py — 29 offline tests (no quota): every fixture passes
+      validate_upload (extension + magic bytes), extracts readable text above the
+      50-char ingestion floor, and classifies to its expected type via the keyword
+      detector. Plus two guard tests: all four types have a fixture, and EXPECTED_TYPE
+      stays in lock-step with what's actually on disk (a new sample_docs/ file that
+      isn't mapped fails the suite).
+- [x] requirements.txt — added reportlab==4.2.5 in a clearly-marked dev/test section
+      (mirrors how pytest already lives there). Not imported by the app at runtime;
+      the new .dockerignore keeps scripts/ out of the production image.
+- [x] .dockerignore — NEW. Excludes venv/, .git/, .env*, __pycache__, .pytest_cache,
+      tests/, scripts/, sample_docs/, output/, docs/, *.md, editor config. Fixes a real
+      problem: `COPY . .` was previously copying the entire context — including the
+      ~venv and, critically, .env — straight into the image.
+- [x] .gitignore — removed the stray `.dockerignore` ignore rule so the new
+      .dockerignore is actually committed (a .dockerignore only works if it ships).
+- [x] Dockerfile + docker-compose.yml — fixed a broken health check: the compose file
+      probed with `curl`, which the python:3.11-slim image never installs (health check
+      would have failed forever). Replaced both with a Python-stdlib urllib probe of
+      /health, and added a matching HEALTHCHECK to the Dockerfile so `docker run` alone
+      is health-checked (not just compose).
+- [x] Verified the container end-to-end: built the image, ran it with a dummy
+      GEMINI_API_KEY, confirmed GET /health → 200 (with security headers) and GET /
+      → API info, the Docker HEALTHCHECK transitions to "healthy", and .env / venv /
+      tests are all absent from the built image.
+- [x] Full suite green: 153 passed (was 124; +29 sample-doc tests).
+
+**Key decisions:**
+- "Real document testing" is split into two layers: a deterministic, quota-free
+  offline layer (test_sample_docs.py — validation + parse + keyword classification
+  across all 4 types, runs in CI with no key) and the existing on-demand live layer
+  (scripts/smoke_test.py — the LLM-dependent tail). The offline layer is the
+  regression guardrail; the live run stays a manual, quota-sparing sanity check per
+  the standing testing convention. The assistant did NOT run the live smoke test.
+- Sample docs are self-describing by design: enough type keywords in the first page
+  that the keyword classifier (needs 2+ matches) resolves the type without falling
+  back to Gemini. That's both realistic AND what lets the fixtures be asserted on
+  offline — the front half of the pipeline is now fully testable without a key.
+- Health check uses a Python urllib probe rather than installing curl: the slim
+  image has Python already, so no extra apt layer / image weight just to health-check.
+- reportlab is dev/test-only. Rather than a separate requirements-dev.txt (new
+  convention), it goes in requirements.txt next to pytest — matching the project's
+  existing one-file convention — and .dockerignore keeps scripts/ out of the image
+  so the dependency is never actually needed at runtime.
+- Image is ~981 MB, dominated by the mandatory google-adk / google-cloud-aiplatform
+  stack (unavoidable given the Kaggle ADK requirement), not by build-context cruft —
+  the .dockerignore removed the venv/secret bloat that was the fixable part.
+
+**Day 6 follow-up — real user-supplied documents + classifier hardening:**
+- [x] The user replaced the synthetic fixtures with their own realistic documents
+      (health/car/home policies + a car cover note, in PDF and DOCX — real ~190 KB
+      PDFs). Re-ran the offline suite against them, which surfaced real classifier
+      behaviour the clean synthetic docs had hidden.
+- [x] agents/ingestion_agent.py — added a CONFIDENCE MARGIN to the keyword
+      fast-path: it now trusts a type only when it has ≥2 matches AND leads the
+      runner-up by ≥2 (MIN_KEYWORD_SCORE / KEYWORD_CONFIDENCE_MARGIN constants).
+      Fixes a genuine misclassification: the user's health fixture is a hybrid
+      "Health Cum Savings Endowment" plan scoring life:3 vs health:2 — the old
+      "≥2 wins" rule confidently (and wrongly) picked `life` and skipped the Gemini
+      fallback. A bare 3-vs-2 edge is no longer "confident"; close calls defer to
+      Gemini, which reads meaning rather than counting keywords.
+- [x] agents/ingestion_agent.py — widened the keyword scan window 3000 → 6000 chars
+      (KEYWORD_SAMPLE_CHARS). python-docx appends all tables *after* the body text,
+      so a car schedule's keywords (own damage / third party / IDV) sat past the old
+      3000-char cutoff and the DOCX punted while the same PDF classified. Verified the
+      wider window introduces no confident-wrong answers on the corpus.
+- [x] config/settings.py — added US-style homeowners vocabulary to the `home`
+      keyword list (`homeowners policy`, `dwelling`, `personal property`,
+      `loss of use`) so US HO-3 policies classify on the fast-path. Verified these
+      terms do NOT appear in any health/life/car fixture (no cross-type leakage).
+- [x] tests/test_sample_docs.py — updated EXPECTED_TYPE to the user's filenames and
+      reframed the classification test to the correct real-doc invariant: the keyword
+      fast-path may return the right type OR punt to `unknown` (→ Gemini at runtime),
+      but must NEVER be confidently wrong. This is the property that actually matters
+      and is offline-verifiable without a key.
+- [x] Result on the user's corpus: 8/10 classify correctly on the fast-path, 2 (the
+      genuine health-endowment hybrids) correctly punt to Gemini, 0 confidently wrong.
+      Full suite green: 156 passed.
+
+**Key decisions (follow-up):**
+- The `document_type` label does NOT change what downstream agents extract, so these
+  classifier fixes are a robustness / quota-and-latency improvement (fewer Gemini
+  classification calls, graceful degradation if Gemini is rate-limited) — NOT an
+  output-accuracy change. Runtime type was already correct via the fallback.
+- Genuinely ambiguous documents (a health-cum-savings hybrid) are left to punt to
+  Gemini on purpose. Forcing a keyword answer there would trade a correct "ask the
+  smarter classifier" for a brittle guess — the wrong kind of fix.
+
+**Next session (Day 7):** Deploy + complete README
 
 ---
 

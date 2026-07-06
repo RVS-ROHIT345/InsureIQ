@@ -89,7 +89,7 @@ python main.py
 
 # 6. Test with a document
 curl -X POST http://localhost:8000/analyze \
-  -F "file=@sample_docs/sample_life_insurance.pdf"
+  -F "file=@sample_docs/sample_life_insurance_limited_pay.pdf"
 ```
 
 ## Setup (Docker)

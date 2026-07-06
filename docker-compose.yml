@@ -11,9 +11,10 @@ services:
       - APP_ENV=production
     # Restart on crash — important for Cloud Run equivalent behavior
     restart: unless-stopped
-    # Health check — Cloud Run uses this
+    # Health check — Cloud Run uses this. The slim image has no curl, so probe
+    # with the Python stdlib (mirrors the Dockerfile HEALTHCHECK).
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=4).status==200 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3

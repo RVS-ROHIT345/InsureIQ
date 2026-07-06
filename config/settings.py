@@ -71,7 +71,10 @@ class Settings:
         "home": [
             "home insurance", "property insurance", "structure coverage",
             "contents coverage", "flood damage", "fire damage", "burglary",
-            "homeowner", "dwelling coverage"
+            "homeowner", "dwelling coverage",
+            # US-style homeowners policy vocabulary (HO-3 etc.) — distinctive to
+            # home cover, verified not to appear in health/life/car fixtures.
+            "homeowners policy", "dwelling", "personal property", "loss of use",
         ],
     }
 
