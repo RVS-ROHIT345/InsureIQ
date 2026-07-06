@@ -21,6 +21,7 @@ import main
 from main import app
 from config.settings import settings
 from tools.file_validation import validate_upload
+from agents.gemini_utils import GeminiQuotaExhaustedError
 
 client = TestClient(app)
 
@@ -160,6 +161,18 @@ def test_analyze_pipeline_value_error_maps_to_422():
         resp = _upload("policy.pdf", PDF_BYTES)
     assert resp.status_code == 422
     assert resp.json()["detail"] == "Could not extract text"
+
+
+def test_analyze_quota_exhausted_maps_to_429_with_clear_message():
+    # A used-up Gemini free-tier key must surface as a clear 429 a reviewer can
+    # understand — not an opaque 500. The friendly message is passed through verbatim.
+    err = GeminiQuotaExhaustedError("Gemini API quota exhausted — run `pytest tests/ -q`.")
+    with patch.object(main, "run_pipeline", side_effect=err):
+        resp = _upload("policy.pdf", PDF_BYTES)
+    assert resp.status_code == 429
+    detail = resp.json()["detail"]
+    assert "quota exhausted" in detail.lower()
+    assert "pytest" in detail.lower()
 
 
 def test_analyze_internal_error_maps_to_500_without_leaking():

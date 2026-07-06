@@ -27,6 +27,7 @@ from fastapi.responses import JSONResponse
 from config.settings import settings
 from pipeline import run_pipeline
 from tools.file_validation import validate_upload
+from agents.gemini_utils import GeminiQuotaExhaustedError
 
 # Read the upload in bounded chunks so a malicious/oversized client can never
 # force us to buffer more than the limit (+1 byte to detect the overflow) into
@@ -172,6 +173,12 @@ async def analyze_document(file: UploadFile = File(...)):
     # ── Run pipeline ──────────────────────────────────────────────────────────
     try:
         result = run_pipeline(file_bytes, filename)
+    except GeminiQuotaExhaustedError as e:
+        # Free-tier quota / rate limit used up — not an internal fault. Surface a
+        # clear 429 with an actionable message so a reviewer knows exactly what
+        # happened (rather than seeing a generic 500).
+        logger.warning(f"Gemini quota exhausted while analyzing {filename}")
+        raise HTTPException(status_code=429, detail=str(e))
     except ValueError as e:
         # User-facing errors (bad file, unreadable content)
         logger.warning(f"Pipeline validation error: {e}")
