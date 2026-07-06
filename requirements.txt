@@ -51,8 +51,3 @@ pytest-cov==6.0.0
 
 # Logging helpers
 rich==13.9.4
-
-# Dev/test only — realistic sample insurance PDF/DOCX generation
-# (scripts/generate_sample_docs.py). Not imported by the app at runtime; the
-# .dockerignore keeps scripts/ out of the production image.
-reportlab==4.2.5

@@ -380,7 +380,62 @@ findings that reshaped this day:
 
 ---
 
-## Day 8 — YouTube demo video [ ] Not started
+## Day 8 — Submission demo video kit ✅
+
+**Antigravity check (did it first):** Searched the whole repo — no `.antigravity/`
+config, no IDE metadata, no commit signatures, nothing. The only two mentions of
+"antigravity" were the *claim* rows in PROGRESS/README, not build evidence. This
+project was built with Claude Code, not Antigravity. Rather than fake it on camera,
+we **dropped the Antigravity claim** — the repo genuinely demonstrates 5 of the 6
+course concepts (multi-agent/ADK, MCP, ADK tools, security, deployability), well
+above the ≥3 required, so the claim was unnecessary risk.
+
+**Completed:**
+- [x] README.md — removed the unsupported "Antigravity | Demonstrated in the
+      submission video" row from the Course Concepts table. No false claim to judges.
+- [x] docs/demo_video_script.md — NEW. Word-for-word narration + shot list keyed to
+      the capstone's exact required structure (0:00 problem / 0:45 why-agents /
+      1:30 architecture / 2:30 live demo / 4:00 tech stack). Includes a recording
+      checklist and a "record a good take first as quota insurance" plan.
+- [x] scripts/demo_run.py — NEW. Screen-recording-friendly pipeline driver for the
+      2:30–4:00 live-demo segment. Runs one real doc through all 6 agents narrating
+      each hand-off with a timing, then prints an AT-A-GLANCE panel highlighting the
+      exact three things the rubric wants shown: maturity date (Agent 2), financial
+      verdict + IRR/benchmarks (Agent 4), and severity-rated red flags (Agent 5).
+      Formatted for a viewer (ANSI colour, box-drawing, `--no-color` fallback), not
+      raw JSON like smoke_test.py. Makes REAL Gemini calls; the user records it.
+- [x] docs/architecture_diagram.html — NEW. Polished, theme-aware "document-intelligence
+      transit line" diagram of the 6-agent pipeline for the 1:30–2:30 architecture
+      segment: the policy rides a rail through 6 numbered stations, every connector
+      labelled with the real data hand-off (text+type → policy facts → coverage →
+      verdict → flags → .docx). Rebuilt from a flat six-box row after review.
+- [x] images/architecture_diagram_{dark,light}.png — NEW. Rendered the diagram to
+      3200×1800 (2× retina, 16:9) PNGs via headless Chrome so the diagram can be
+      dropped straight into the video / slides without a live URL. Both themes.
+- [x] docs/why_agents.html + images/why_agents_{dark,light}.png — NEW. The
+      single-LLM-call vs 6-agents comparison graphic for the 0:45–1:30 "why agents"
+      segment (was only described in the script, no image existed). Same visual
+      system as the architecture diagram; rendered to 3200×1800 PNGs, both themes.
+- [x] Removed scripts/generate_sample_docs.py (the Day-6 synthetic-doc generator) —
+      the corpus is now the user's own real documents, so the generator is unused.
+      Dropped its sole dependency `reportlab` from requirements.txt and updated the
+      two README references. No test imported it; suite unaffected.
+
+**Key decisions:**
+- Honesty over concept-count: dropped a claim we couldn't back rather than staging
+  fake Antigravity footage. 5 genuine concepts already clears the bar.
+- The live demo uses a dedicated `demo_run.py` (viewer-formatted) instead of
+  `smoke_test.py` (developer-formatted, dumps JSON) — the AT-A-GLANCE panel is built
+  to be the on-camera payoff. Default doc is the limited-pay LIFE policy because it's
+  the only type that exercises maturity date + full financial verdict + red flags all
+  at once (term/health have no maturity → duller demo).
+- Architecture segment is served by a real diagram, not a code scroll — a judge
+  parses the 6-agent flow far faster from a visual.
+- Assistant did NOT run demo_run.py (real Gemini calls / quota convention) — the user
+  records it live. Script tells them to capture one good take first as insurance
+  against a mid-recording quota exhaustion (which now prints cleanly, not a crash).
+
+**Next session (Day 9):** Kaggle Writeup
 
 ---
 
