@@ -439,7 +439,33 @@ above the ≥3 required, so the claim was unnecessary risk.
 
 ---
 
-## Day 9 — Kaggle Writeup [ ] Not started
+## Day 9 — Kaggle Writeup ✅
+
+**Completed:**
+- [x] docs/kaggle_writeup.md — NEW. Complete, paste-ready Kaggle submission writeup
+      following the capstone's required structure: links block (YouTube + GitHub +
+      "verify offline") → Problem → Solution → Why multi-agent → Architecture (6-agent
+      table) → Demo → Tech stack → Course concepts (honest 5-of-6) → Engineering
+      highlights → 60-second run instructions. Kept in lock-step with the README
+      (192 tests, Gemini 2.5 Flash, numbers-vs-prose split) and Day-8's dropped
+      Antigravity claim — no concept is overstated.
+- [x] YouTube demo video recorded, uploaded, and linked: https://youtu.be/eyj7NNDGuvo
+      (embedded in both the links table and the Demo section).
+- [x] Diagram images embedded via GitHub **raw** URLs
+      (raw.githubusercontent.com/.../main/images/...) rather than relative paths, so
+      both the why-agents and architecture PNGs render inline when the markdown is
+      pasted into the Kaggle Writeup editor (relative paths only resolve on GitHub).
+
+**Key decisions:**
+- Wrote the writeup as a committed repo file (docs/kaggle_writeup.md) so the submission
+  text is version-controlled and consistent with the README/architecture docs, then
+  pasted into Kaggle — single source of truth, no drift between repo and submission.
+- Used GitHub raw image URLs because Kaggle's editor won't resolve repo-relative paths;
+  the PNGs are already on origin/main (verified) so the links are live.
+- Concept count stays at a genuine 5-of-6 (no Antigravity) — matches Day 8's honesty
+  decision; nothing in the writeup claims more than the repo demonstrates.
+
+**Next session (Day 10):** Final review + submit
 
 ---
 
