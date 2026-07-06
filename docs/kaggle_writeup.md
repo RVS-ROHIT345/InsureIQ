@@ -136,7 +136,11 @@ required:
   reads (DoS-safe), documents processed **in memory only**, conservative security headers on
   every response, container runs as non-root.
 
-## How to Run It (60 seconds, no API key)
+## How to Run It
+
+### Step 1 — Install & verify offline (60 seconds, no API key)
+
+The full pipeline is verifiable with **no Gemini key** — the 192-test suite mocks the model:
 
 ```bash
 git clone https://github.com/RVS-ROHIT345/InsureIQ.git
@@ -146,9 +150,39 @@ pip install -r requirements.txt
 pytest tests/ -q                                       # → 192 passed (Gemini mocked)
 ```
 
-To see real agents on a real document, add a `GEMINI_API_KEY` to `.env` and run
-`python scripts/smoke_test.py`, or start the API with `python main.py` and POST a document
-to `/analyze`. Full instructions are in the
+### Step 2 — Watch all 6 agents run on a real document (needs an API key)
+
+To see the real pipeline end-to-end — each of the six agents firing in sequence on a real
+policy and the final `.docx` report written out — add a free Gemini key and run the smoke test:
+
+```bash
+cp .env.example .env                        # Windows: copy .env.example .env
+# paste your GEMINI_API_KEY into .env  (get one free at https://aistudio.google.com/app/apikey)
+
+python scripts/smoke_test.py                # runs all 6 agents on a bundled sample policy
+# …or point it at your own document:
+python scripts/smoke_test.py path/to/your_policy.pdf
+```
+
+The smoke test prints **each agent's output as it runs** (Ingestion → Policy Extractor →
+Coverage Analyzer → Financial Evaluator → Risk Flag → Report Composer), makes ~6 real Gemini
+calls, ends with `✅ Smoke test passed`, and saves the formatted report to
+`output/<doc>_insureiq_report.docx` for you to open.
+
+> **Hit the free-tier quota?** InsureIQ stops with a clear `⚠️ Gemini API quota exhausted`
+> message (and the API returns HTTP 429, not a cryptic 500) — this is expected free-tier
+> behavior, **not a bug**. Wait for the limit to reset, swap in another key, or just run the
+> keyless test suite from Step 1.
+
+### Alternative — run it as an API
+
+```bash
+python main.py                              # serves on http://localhost:8000
+curl -X POST http://localhost:8000/analyze \
+  -F "file=@sample_docs/sample_life_insurance_limited_pay.pdf"
+```
+
+Interactive Swagger docs are at `http://localhost:8000/docs`. Full instructions are in the
 [README](https://github.com/RVS-ROHIT345/InsureIQ/blob/main/README.md).
 
 > Per the capstone rules, a live public endpoint is optional — **this repository is the
