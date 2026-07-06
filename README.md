@@ -8,6 +8,8 @@
 [![Google ADK](https://img.shields.io/badge/Framework-Google%20ADK-red)](https://google.github.io/adk-docs/)
 [![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen)](tests/)
 
+**📹 [Watch the 5-minute demo video](https://youtu.be/eyj7NNDGuvo)** — problem, architecture, and a live end-to-end run on a real policy.
+
 ---
 
 ## 👋 For Reviewers / Judges — Run It in 60 Seconds
