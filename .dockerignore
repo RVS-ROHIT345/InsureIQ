@@ -1,0 +1,58 @@
+# InsureIQ — Docker build context exclusions
+# Keeps the image small and prevents secrets / dev cruft from being baked in.
+# NOTE: `COPY . .` copies the whole context, so anything NOT excluded here ends
+# up in the image. Excluding a path here does not remove it from git.
+
+# === SECRETS — never bake into an image ===
+.env
+*.env
+.env.*
+!.env.example
+
+# === Virtual environments (huge; rebuilt via pip in the image) ===
+venv/
+env/
+.venv/
+ENV/
+
+# === Version control & CI ===
+.git/
+.gitignore
+.gitattributes
+
+# === Python caches / build artifacts ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# === Tests, dev scripts & fixtures (not needed at runtime) ===
+tests/
+scripts/
+sample_docs/
+
+# === Runtime-generated / user data ===
+output/
+reports/
+uploads/
+temp/
+tmp/
+*.log
+
+# === Docs & local editor config ===
+docs/
+*.md
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === Docker files themselves ===
+Dockerfile
+docker-compose.yml
+.dockerignore

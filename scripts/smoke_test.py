@@ -73,7 +73,7 @@ def main() -> None:
     _dump("[Agent 3] Coverage Map", coverage)
 
     # ── Agent 4: Financial Evaluator ──────────────────────────────────────────
-    financial = run_financial_evaluator_agent(policy)
+    financial = run_financial_evaluator_agent(policy, document_type=ingestion["document_type"])
     _dump("[Agent 4] Financial Verdict", financial)
 
     # ── Agent 5: Risk Flag ────────────────────────────────────────────────────

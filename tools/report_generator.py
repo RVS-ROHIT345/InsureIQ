@@ -54,6 +54,27 @@ _DATE_FIELDS = [
 
 _MISSING = "Not specified"
 
+# Human-facing labels for the financial verdict enum. The raw enum values are kept
+# in the JSON/API for stable machine consumption, but a lay reader must never see a
+# bold "Net Loss" heading sitting directly above a "Net gain / loss: ₹+810,000" row —
+# the verdict is a RETURN-QUALITY judgement (IRR tier), not a statement that the
+# policyholder lost money nominally. These labels say that unambiguously.
+_VERDICT_DISPLAY = {
+    "PROFIT": "Strong return",
+    "BREAK_EVEN": "Roughly breaks even",
+    "NET_LOSS": "Underperforms the benchmarks",
+    "PROTECTION_ONLY": "Protection only — no investment component",
+    "NO_MATURITY_BENEFIT": "Protection only — no maturity payout",
+    "INSUFFICIENT_DATA": "Insufficient data to judge",
+    "UNKNOWN": "Not determined",
+}
+
+
+def _verdict_label(verdict: str) -> str:
+    """Map a verdict enum to its human-facing label; fall back to Title Case."""
+    key = str(verdict or "UNKNOWN").strip().upper()
+    return _VERDICT_DISPLAY.get(key, key.replace("_", " ").title())
+
 
 def _clean(value) -> str:
     """Render any policy value as display text, collapsing None/empty to a marker."""
@@ -205,7 +226,7 @@ def _add_financial_section(doc: Document, financial_verdict: dict, report_intros
     verdict = financial_verdict.get("verdict") or "UNKNOWN"
     verdict_para = doc.add_paragraph()
     verdict_para.add_run("Verdict: ").bold = True
-    verdict_para.add_run(verdict.replace("_", " ").title())
+    verdict_para.add_run(_verdict_label(verdict))
 
     plain = (financial_verdict.get("verdict_plain_english") or "").strip()
     if plain:

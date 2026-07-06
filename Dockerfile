@@ -25,5 +25,11 @@ USER appuser
 # Expose API port
 EXPOSE 8000
 
+# Container-level health check. The slim image has no curl, so probe with the
+# Python stdlib (urllib) — exit non-zero if /health is not 200. Cloud Run and
+# docker-compose both surface this status.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=4).status==200 else 1)"]
+
 # Start FastAPI via uvicorn
 CMD ["python", "main.py"]
