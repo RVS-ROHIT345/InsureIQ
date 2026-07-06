@@ -38,7 +38,10 @@ class Settings:
 
     # --- FastAPI ---
     API_HOST: str = os.environ.get("API_HOST", "0.0.0.0")
-    API_PORT: int = int(os.environ.get("API_PORT", "8000"))
+    # Managed platforms (Cloud Run, Render, Railway, Heroku) inject the port the
+    # container MUST listen on via $PORT. Honor it first so the app is deploy-ready
+    # anywhere; fall back to API_PORT for local dev, then 8000.
+    API_PORT: int = int(os.environ.get("PORT") or os.environ.get("API_PORT") or "8000")
 
     # --- CORS ---
     # Comma-separated list of allowed browser origins. Defaults to "*" for

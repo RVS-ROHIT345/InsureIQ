@@ -1,9 +1,12 @@
 # InsureIQ — Build Progress Log
 
 Track: Concierge Agents
-Deadline: July 6, 2026 at 11:59 PM PT
-GitHub: [to be added]
-Live URL: [to be added after Day 7]
+Deadline: July 6, 2026 at 11:59 PM PT (⚠️ verify against the live Kaggle page — the
+  official rules PDF snapshot read "10 days to go", so confirm the real close date)
+GitHub: https://github.com/RVS-ROHIT345/InsureIQ
+Live URL: none — deployment is OPTIONAL per the capstone rules ("Participants are not
+  required to deploy their agents to a live public endpoint"). The GitHub repo, with
+  detailed run instructions, is the submission's Project Link.
 
 ---
 
@@ -321,7 +324,59 @@ real-document sanity checks only.
 
 ---
 
-## Day 7 — Deploy + complete README [ ] Not started
+## Day 7 — Complete README + repo polish (deployment scoped as optional) ✅
+
+**Rules check first:** Read the official capstone rules (AiChallengeCompleteInfo). Key
+findings that reshaped this day:
+- A live deployment is **NOT required** — "Participants are not required to deploy their
+  agents to a live public endpoint for judging purposes." A public GitHub repo with
+  detailed setup instructions satisfies the Project Link requirement.
+- Documentation is worth **20 points** and must be a README covering problem, solution,
+  architecture, setup, and diagrams. That's where the effort went.
+- Deployability is one of six concepts (need ≥3); it's satisfied by the Docker/Compose
+  setup + $PORT-readiness in code and shown in the video — no live URL needed.
+
+**Completed:**
+- [x] README.md — rewritten as a judge-runnable document:
+      • "For Reviewers / Judges — Run It in 60 Seconds" block up top (install → 178-test
+        suite with NO key → smoke test / API).
+      • Explicit, accurate sections: Running the API (endpoints + example request/response
+        + Swagger link), Running the Tests (mocked, keyless), Running the Live Smoke Test
+        (real Gemini), Docker, Sample Documents table, Project Structure.
+      • Fixed the real GitHub clone URL, the actual sample-doc filenames, and the tests
+        badge (178 passing).
+      • Corrected the model reference (was "Gemini 1.5 Pro" → actual "Gemini 2.5 Flash").
+      • Reframed deployment as Cloud Run / Render *ready* rather than done, matching reality.
+- [x] docs/architecture.md — expanded from a one-line stub into a full component-by-component
+      write-up (flow diagram, entry points, MCP server, the six agents, tools, the
+      numbers-vs-prose principle, security posture, deployability). README links to it.
+- [x] config/settings.py — API_PORT now honors `$PORT` first (Cloud Run/Render/Railway
+      inject it), then API_PORT, then 8000. Makes the "deploy-ready" claim genuinely true
+      and unblocks any future one-command deploy.
+- [x] .env.example — API_PORT 8002 → 8000 to match the Dockerfile/compose/health-check
+      (a judge copying .env.example would otherwise have run the app on a port nothing
+      else probed).
+- [x] agents/gemini_utils.py — reviewer-friendly quota handling. New
+      GeminiQuotaExhaustedError + _is_quota_error detection: a used-up free-tier key now
+      fails fast (no pointless retries on a daily quota) with a plain-English, actionable
+      message instead of an opaque RuntimeError. main.py maps it to HTTP 429 (not 500);
+      scripts/smoke_test.py prints "⚠️ Gemini API quota exhausted …" and exits cleanly.
+      README documents the behaviour so a judge who hits the limit understands it's
+      expected, not a crash.
+- [x] tests/test_gemini_utils.py (new) + a 429 case in test_main.py — 14 new tests
+      covering quota detection, fail-fast, non-quota retry, and the 429 mapping.
+- [x] Full suite still green: 192 passed (was 178; +14).
+
+**Key decisions:**
+- Deployment deliberately treated as optional after reading the rules — the guaranteed
+  points are in Documentation (20 pts) and a repo that actually runs, so Day 7 targets
+  those instead of burning the deadline on gcloud/billing setup.
+- The `$PORT` fix is universal (works for Cloud Run, Render, Railway, Heroku), so the repo
+  stays genuinely deploy-ready without committing to any one platform.
+- README leads with the keyless 178-test suite so a judge can verify the whole pipeline
+  offline in under a minute — the strongest possible "instructions that actually run."
+
+**Next session (Day 8):** YouTube demo video (Antigravity + Deployability shown here)
 
 ---
 

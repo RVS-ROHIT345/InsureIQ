@@ -37,6 +37,7 @@ from agents.coverage_analyzer_agent import run_coverage_analyzer_agent
 from agents.financial_evaluator_agent import run_financial_evaluator_agent
 from agents.risk_flag_agent import run_risk_flag_agent
 from agents.report_composer_agent import run_report_composer_agent
+from agents.gemini_utils import GeminiQuotaExhaustedError
 from config.settings import settings
 
 DEFAULT_DOC = PROJECT_ROOT / "sample_docs" / "sample_life_insurance_policy.docx"
@@ -121,4 +122,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except GeminiQuotaExhaustedError as e:
+        # Expected on a used-up free-tier key — exit cleanly with a clear message
+        # instead of dumping a traceback that looks like a crash.
+        print(f"\n⚠️  {e}\n")
+        sys.exit(2)
