@@ -1,22 +1,3 @@
-# InsureIQ — AI-Powered Insurance Document Analyzer
-
-**Kaggle AI Agents Intensive — Vibe Coding Capstone · Track: Concierge Agents**
-
-> A 6-agent AI system that reads the fine print so you don't have to — it turns a
-> 40-page insurance policy into three plain-English answers: *When does my money
-> mature? Is this policy actually a good deal? What's the fine print that could deny
-> my claim?*
-
-**🔗 Links**
-
-| | |
-|---|---|
-| 📹 **Demo video (YouTube)** | https://youtu.be/eyj7NNDGuvo |
-| 💻 **GitHub repository** | https://github.com/RVS-ROHIT345/InsureIQ |
-| 🧪 **Verify offline** | `pytest tests/ -q` → **192 passing**, no API key required |
-
----
-
 ## The Problem
 
 Insurance documents are 40–100 pages of dense legal language engineered to obscure the
