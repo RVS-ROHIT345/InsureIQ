@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  /* InsureIQ — Kaggle Writeup card / thumbnail. Exact canvas 560×280.
+     Reuses the Day-8 "brass / document-intelligence" visual system.
+     Rendered to images/thumbnail_card.png via headless Chrome @2x. */
+  :root {
+    --ground-1: #0f1620;
+    --ground-2: #070a0f;
+    --panel: #172029;
+    --ink: #eaeef3;
+    --ink-soft: #9ba7b4;
+    --ink-faint: #66717e;
+    --line: #2a3641;
+    --brass: #e3b45e;
+    --good: #5cbf86;
+    --warn: #e3b155;
+    --crit: #e8795f;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 560px; height: 280px; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(130% 120% at 12% -10%, #1b2530 0%, var(--ground-1) 42%, var(--ground-2) 100%);
+    overflow: hidden;
+    position: relative;
+  }
+  /* subtle document-rail texture down the right edge */
+  .rail {
+    position: absolute; top: 0; right: 0; width: 150px; height: 100%;
+    background-image: repeating-linear-gradient(180deg,
+      rgba(227,180,94,.10) 0 2px, transparent 2px 15px);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%);
+    mask-image: linear-gradient(90deg, transparent, #000 55%);
+    opacity: .7;
+  }
+  .card { position: relative; height: 100%; padding: 30px 34px; display: flex; flex-direction: column; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .19em; font-size: 10.5px;
+    font-weight: 700; color: var(--brass);
+  }
+  .wordmark { margin-top: 13px; font-size: 55px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+  .wordmark b { color: var(--brass); font-weight: 800; }
+  .tag { margin-top: 12px; font-size: 15.5px; font-weight: 600; color: var(--ink-soft); max-width: 400px; line-height: 1.35; }
+  .chips { margin-top: auto; display: flex; gap: 7px; }
+  .chip {
+    font-size: 11px; font-weight: 600; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 11px 6px 9px; display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .d1 { background: var(--good); }
+  .d2 { background: var(--warn); }
+  .d3 { background: var(--crit); }
+  .foot { margin-top: 12px; font-size: 10.5px; color: var(--ink-faint); letter-spacing: .02em; }
+  .foot b { color: var(--ink-soft); font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="rail"></div>
+  <div class="card">
+    <div class="eyebrow">Kaggle AI Agents · Concierge Track</div>
+    <div class="wordmark">Insure<b>IQ</b></div>
+    <div class="tag">Six AI agents that read insurance fine print — so you don&rsquo;t have to.</div>
+    <div class="chips">
+      <div class="chip"><span class="dot d1"></span>When does it mature?</div>
+      <div class="chip"><span class="dot d2"></span>Is it a good deal?</div>
+      <div class="chip"><span class="dot d3"></span>What&rsquo;s the fine print?</div>
+    </div>
+    <div class="foot"><b>6-agent pipeline</b> · Google ADK + Gemini 2.5 Flash · MCP intake · 192 tests</div>
+  </div>
+</body>
+</html>

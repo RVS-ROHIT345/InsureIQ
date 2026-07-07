@@ -469,4 +469,37 @@ above the ≥3 required, so the claim was unnecessary risk.
 
 ---
 
-## Day 10 — Final review + submit [ ] Not started
+## Day 10 — Final review + submit ✅
+
+**Final pre-submission review (all green):**
+- [x] Keyless test suite: **192 passed** (Gemini mocked, ~8s, no API key).
+- [x] Repo hygiene: working tree clean, in sync with origin/main (0 ahead / 0 behind).
+- [x] Cross-doc consistency swept (README, kaggle_writeup, architecture,
+      demo_video_script): test count is **192** everywhere; LLM is **Gemini 2.5 Flash**
+      everywhere (no stale "1.5 Pro"); the **Antigravity claim is fully removed** from
+      README and all docs (matches the Day-8 honesty decision — genuine 5-of-6 concepts).
+- [x] External links verified live (they're what a judge actually loads from the Kaggle
+      writeup): both GitHub **raw** image URLs (architecture_diagram_dark.png,
+      why_agents_dark.png) return HTTP 200 with sizes matching the local PNGs; the
+      YouTube demo (https://youtu.be/eyj7NNDGuvo) is public and viewable
+      (title "InsureIQ — 6 AI Agents That Read Insurance Fine Print for You | Kaggle
+      Capstone 2026" served by YouTube).
+- [x] Secret hygiene confirmed: `.env` is untracked and in `.gitignore`; a full
+      git-history scan for a real Gemini key (`AIza…`) came back empty. Repo is safe
+      to be the public submission link.
+
+**Remaining manual step — the user submits on Kaggle** (assistant can't do this):
+- [ ] Paste docs/kaggle_writeup.md into the Kaggle Writeup editor.
+- [ ] Set the Project Link to the GitHub repo (https://github.com/RVS-ROHIT345/InsureIQ)
+      and confirm the YouTube link is attached.
+- [ ] ⚠️ Verify the real close date on the live Kaggle competition page before the
+      deadline (the rules PDF snapshot read "10 days to go"; treat July 6 as the working
+      deadline until confirmed) and click Submit.
+
+**Key decisions:**
+- Verified the *external* dependencies of the submission (raw image URLs + video),
+  not just local files — a repo-relative or broken image is invisible in local review
+  but blank in the Kaggle editor, and those URLs only go live once pushed to main.
+- Left the actual Kaggle submission as a user action by design: it requires the user's
+  Kaggle account and a human read of the live deadline, which the assistant can't and
+  shouldn't automate.
